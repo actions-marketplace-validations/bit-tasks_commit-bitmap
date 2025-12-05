@@ -4,18 +4,15 @@ branding:
   icon: 'git-commit'
   color: 'purple'
 inputs:
-  git-user-name:
-    description: "Git user name"
-    required: true
-  git-user-email:
-    description: "Git user email"
-    required: true
   ws-dir:
     description: "Workspace json file directory path"
     required: false
   skip-push:
     description: "Skip commit push (for testing)"
     required: false
+  skip-ci:
+    description: "Remove adding [skip-ci] to the .bitmap file commit message"
+    required: false
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'

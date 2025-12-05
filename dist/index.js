@@ -3967,15 +3967,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(186));
-const exec_1 = __nccwpck_require__(514);
 const commit_bitmap_1 = __importDefault(__nccwpck_require__(35));
 try {
     const wsDir = core.getInput("ws-dir") || process.env.WSDIR || "./";
-    const gitUserName = core.getInput("git-user-name");
-    const gitUserEmail = core.getInput("git-user-email");
-    const skipPush = core.getInput('skip-push');
-    const stdExec = (command, options) => (0, exec_1.exec)(command, [], options);
-    (0, commit_bitmap_1.default)(stdExec, skipPush, gitUserName, gitUserEmail, wsDir);
+    const skipPush = core.getInput("skip-push") === "true" ? true : false;
+    const skipCI = core.getInput("skip-ci") === "false" ? false : true;
+    const gitUserName = process.env.GIT_USER_NAME;
+    if (!gitUserName) {
+        throw new Error("Git user name not found");
+    }
+    const gitUserEmail = process.env.GIT_USER_EMAIL;
+    if (!gitUserEmail) {
+        throw new Error("Git user email token not found");
+    }
+    (0, commit_bitmap_1.default)(skipPush, skipCI, gitUserName, gitUserEmail, wsDir);
 }
 catch (error) {
     core.setFailed(error.message);
@@ -3985,7 +3990,7 @@ catch (error) {
 /***/ }),
 
 /***/ 35:
-/***/ (function(__unused_webpack_module, exports) {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
@@ -3999,18 +4004,23 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const run = (exec, skipPush, gName, gEmail, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
-    yield exec(`git config --global user.name "${gName}"`, { cwd: wsdir });
-    yield exec(`git config --global user.email "${gEmail}"`, { cwd: wsdir });
-    yield exec('git add .bitmap', { cwd: wsdir });
+const exec_1 = __nccwpck_require__(514);
+const run = (skipPush, skipCI, gitUserName, gitUserEmail, wsdir) => __awaiter(void 0, void 0, void 0, function* () {
+    yield (0, exec_1.exec)(`git config --global user.name "${gitUserName}"`, [], {
+        cwd: wsdir,
+    });
+    yield (0, exec_1.exec)(`git config --global user.email "${gitUserEmail}"`, [], {
+        cwd: wsdir,
+    });
+    yield (0, exec_1.exec)("git add .bitmap pnpm-lock.yaml workspace.jsonc", [], { cwd: wsdir });
     try {
-        yield exec('git commit -m "update .bitmap with new component versions (automated). [skip-ci]"', { cwd: wsdir });
+        yield (0, exec_1.exec)(`git commit -m "update .bitmap, pnpm-lock.yaml and workspace.jsonc with new component and dependency versions (automated)${skipCI ? ` [skip-ci]` : ''}"`, [], { cwd: wsdir });
     }
     catch (error) {
         console.error(`Error while committing changes`);
     }
     if (!skipPush) {
-        yield exec('git push', { cwd: wsdir });
+        yield (0, exec_1.exec)("git push", [], { cwd: wsdir });
     }
 });
 exports["default"] = run;
